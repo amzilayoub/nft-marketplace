@@ -15,6 +15,8 @@ contract NftMarketplace is ReentrancyGuard {
 	error NftMarketplace__AlreadyListed(address nftAddress, uint256 tokenId);
 	error NftMarketplace__CannotBuyYourOwnNFT();
 	error NftMarketplace__PriceNotMet();
+	error NftMarketplace__NotENoughProceeds();
+	error NftMarketplace__TransactionProceedsFailed();
 
 	event ItemBought(
 		address indexed buyer,
@@ -173,12 +175,12 @@ contract NftMarketplace is ReentrancyGuard {
 		emit ItemCanceled(msg.sender, nftAddress, tokenId);
 	}
 
-    /**
-     * update nft price
-     * @param nftAddress nft address
-     * @param tokenId token id
-     * @param price new price
-     */
+	/**
+	 * update nft price
+	 * @param nftAddress nft address
+	 * @param tokenId token id
+	 * @param price new price
+	 */
 	function updateListing(
 		address nftAddress,
 		uint256 tokenId,
@@ -186,5 +188,42 @@ contract NftMarketplace is ReentrancyGuard {
 	) external hasOwnership(nftAddress, tokenId) isListed(nftAddress, tokenId) {
 		s_listing[nftAddress][tokenId].price = price;
 		emit ItemUpdated(msg.sender, nftAddress, tokenId, price);
+	}
+
+	/**
+	 * Withraw the total proceeds
+	 */
+	function withdrawProceeds() external nonReentrant {
+		uint256 proceeds = s_proceeds[msg.sender];
+		if (proceeds <= 0) {
+			revert NftMarketplace__NotENoughProceeds();
+		}
+		(bool success, ) = payable(msg.sender).call{value: s_proceeds[msg.sender]}("");
+		if (!success) {
+			revert NftMarketplace__TransactionProceedsFailed();
+		}
+		delete (s_proceeds[msg.sender]);
+	}
+
+	/***********************
+	 ** Functions
+	 **********************/
+	/**
+	 * get listing
+	 * @param nftAddress nft address
+	 * @param tokenId token id
+	 */
+	function getListing(
+		address nftAddress,
+		uint256 tokenId
+	) external view returns (Listing memory) {
+		return s_listing[nftAddress][tokenId];
+	}
+
+	/**
+	 * get proceeds of the sender
+	 */
+	function getProceeds() external view returns (uint256) {
+		return s_proceeds[msg.sender];
 	}
 }
