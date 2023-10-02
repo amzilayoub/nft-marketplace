@@ -2,8 +2,8 @@
   "_format": "hh-sol-cache-2",
   "files": {
     "/Users/amzilayoub/Desktop/web3/nft-marketplace/contracts/NftMarketplace.sol": {
-      "lastModificationDate": 1696102069314,
-      "contentHash": "c7ace506ad816f7dfbc508a251a04b60",
+      "lastModificationDate": 1696185304102,
+      "contentHash": "2a546b2db5b82f70a07a8f5c51f43d1b",
       "sourceName": "contracts/NftMarketplace.sol",
       "solcConfig": {
         "version": "0.8.7",

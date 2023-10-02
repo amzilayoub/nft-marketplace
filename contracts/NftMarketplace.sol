@@ -3,8 +3,9 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
-contract NftMarketplace {
+contract NftMarketplace is ReentrancyGuard {
 	/***********************
 	 * Errors
 	 **********************/
@@ -12,7 +13,24 @@ contract NftMarketplace {
 	error NftMarketplace__NotApprovedForMarketPlace();
 	error NftMarketplace__UnvalidOwner();
 	error NftMarketplace__AlreadyListed(address nftAddress, uint256 tokenId);
+	error NftMarketplace__CannotBuyYourOwnNFT();
+	error NftMarketplace__PriceNotMet();
 
+	event ItemBought(
+		address indexed buyer,
+		address indexed nftAddress,
+		uint256 indexed tokenId,
+		uint256 price
+	);
+
+	event ItemCanceled(address indexed owner, address indexed nftAddress, uint256 indexed tokenId);
+
+	event ItemUpdated(
+		address indexed owner,
+		address indexed nftAddress,
+		uint256 indexed tokenId,
+		uint256 price
+	);
 	/***********************
 	 * Types
 	 **********************/
@@ -25,6 +43,7 @@ contract NftMarketplace {
 	 * Variables
 	 **********************/
 	mapping(address => mapping(uint256 => Listing)) private s_listing;
+	mapping(address => uint256) private s_proceeds;
 
 	/***********************
 	 * Events
@@ -35,20 +54,6 @@ contract NftMarketplace {
 		uint256 indexed tokenId,
 		uint256 price
 	);
-
-	/************************
-	 * Modifiers
-	 ***********************/
-	/**
-	 *  check if price if valid
-	 * @param price nft price
-	 */
-	modifier validPrice(uint256 price) {
-		if (price <= 0) {
-			revert NftMarketplace__NotValidPrice();
-		}
-		_;
-	}
 
 	/**
 	 * check if the marketplace (this contract) is allowed to list the nft
@@ -87,6 +92,18 @@ contract NftMarketplace {
 		_;
 	}
 
+	/**
+	 * check if the seller is not the buyer
+	 * @param nftAddress nft address
+	 * @param tokenId nft token id
+	 */
+	modifier isListed(address nftAddress, uint256 tokenId) {
+		if (s_listing[nftAddress][tokenId].price < 0) {
+			revert NftMarketplace__CannotBuyYourOwnNFT();
+		}
+		_;
+	}
+
 	/***********************
 	 ** Functions
 	 **********************/
@@ -105,12 +122,69 @@ contract NftMarketplace {
 		uint256 price
 	)
 		external
-		validPrice(price)
 		hasOwnership(nftAddress, tokenId)
 		getApproval(nftAddress, tokenId)
 		alreadyListed(nftAddress, tokenId)
 	{
+		if (price < 0) {
+			revert NftMarketplace__NotValidPrice();
+		}
 		s_listing[nftAddress][tokenId] = Listing(price, msg.sender);
 		emit ItemListed(msg.sender, nftAddress, tokenId, price);
+	}
+
+	/**
+	 * buy nft
+	 * @dev we added the modifier nonReentrant to protect from the re entrency attack
+	 *      it is basically a mutex that set a variable to true to lock the function
+	 *      then set it back to true when the functions execution is finished
+	 *      Other option is to set all out state correctly before calling other contracts
+	 *      NOTE: In this case, we are safe with the way we sequenced the code
+	 * @param nftAddress nft address
+	 * @param tokenId token id
+	 */
+	function buyItem(
+		address nftAddress,
+		uint256 tokenId
+	) external payable isListed(nftAddress, tokenId) nonReentrant {
+		Listing memory listedItem = s_listing[nftAddress][tokenId];
+		if (listedItem.price < msg.value) {
+			revert NftMarketplace__PriceNotMet();
+		}
+		delete (s_listing[nftAddress][tokenId]);
+		s_proceeds[listedItem.seller] += msg.value;
+		/* transfer the ownership */
+		IERC721(nftAddress).safeTransferFrom(listedItem.seller, msg.sender, tokenId);
+		emit ItemBought(msg.sender, nftAddress, tokenId, msg.value);
+	}
+
+	/**
+	 * cancel listing
+	 * @param nftAddress nft address
+	 * @param tokenId token Id
+	 */
+	function cancelListing(
+		address nftAddress,
+		uint256 tokenId
+	) external hasOwnership(nftAddress, tokenId) isListed(nftAddress, tokenId) {
+		// first check if listed
+		// check if is the owner
+		delete (s_listing[nftAddress][tokenId]);
+		emit ItemCanceled(msg.sender, nftAddress, tokenId);
+	}
+
+    /**
+     * update nft price
+     * @param nftAddress nft address
+     * @param tokenId token id
+     * @param price new price
+     */
+	function updateListing(
+		address nftAddress,
+		uint256 tokenId,
+		uint256 price
+	) external hasOwnership(nftAddress, tokenId) isListed(nftAddress, tokenId) {
+		s_listing[nftAddress][tokenId].price = price;
+		emit ItemUpdated(msg.sender, nftAddress, tokenId, price);
 	}
 }
