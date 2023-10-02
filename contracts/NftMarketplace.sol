@@ -206,7 +206,7 @@ contract NftMarketplace is ReentrancyGuard {
 	}
 
 	/***********************
-	 ** Functions
+	 ** Getters
 	 **********************/
 	/**
 	 * get listing
