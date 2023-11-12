@@ -2,8 +2,8 @@
   "_format": "hh-sol-cache-2",
   "files": {
     "/Users/amzilayoub/Desktop/web3/nft-marketplace/contracts/NftMarketplace.sol": {
-      "lastModificationDate": 1696185304102,
-      "contentHash": "2a546b2db5b82f70a07a8f5c51f43d1b",
+      "lastModificationDate": 1699355612780,
+      "contentHash": "3948f378472145641ca6c6fce3fe258d",
       "sourceName": "contracts/NftMarketplace.sol",
       "solcConfig": {
         "version": "0.8.7",
@@ -36,7 +36,8 @@
         }
       },
       "imports": [
-        "@openzeppelin/contracts/token/ERC721/IERC721.sol"
+        "@openzeppelin/contracts/token/ERC721/IERC721.sol",
+        "@openzeppelin/contracts/security/ReentrancyGuard.sol"
       ],
       "versionPragmas": [
         "^0.8.0"
@@ -129,6 +130,48 @@
       ],
       "artifacts": [
         "IERC165"
+      ]
+    },
+    "/Users/amzilayoub/Desktop/web3/nft-marketplace/node_modules/@openzeppelin/contracts/security/ReentrancyGuard.sol": {
+      "lastModificationDate": 1696097912981,
+      "contentHash": "1535f8c0c68463f8c1b5239f7584e71f",
+      "sourceName": "@openzeppelin/contracts/security/ReentrancyGuard.sol",
+      "solcConfig": {
+        "version": "0.8.7",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata",
+                "devdoc",
+                "userdoc",
+                "storageLayout",
+                "evm.gasEstimates"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          },
+          "metadata": {
+            "useLiteralContent": true
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": [
+        "ReentrancyGuard"
       ]
     }
   }

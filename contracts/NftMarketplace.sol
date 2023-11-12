@@ -18,21 +18,22 @@ contract NftMarketplace is ReentrancyGuard {
 	error NftMarketplace__NotENoughProceeds();
 	error NftMarketplace__TransactionProceedsFailed();
 
+	/***********************
+	 ** Events 
+	 **********************/
 	event ItemBought(
 		address indexed buyer,
 		address indexed nftAddress,
 		uint256 indexed tokenId,
 		uint256 price
 	);
-
-	event ItemCanceled(address indexed owner, address indexed nftAddress, uint256 indexed tokenId);
-
 	event ItemUpdated(
 		address indexed owner,
 		address indexed nftAddress,
 		uint256 indexed tokenId,
 		uint256 price
 	);
+	event ItemCanceled(address indexed owner, address indexed nftAddress, uint256 indexed tokenId);
 	/***********************
 	 * Types
 	 **********************/
@@ -150,7 +151,7 @@ contract NftMarketplace is ReentrancyGuard {
 		uint256 tokenId
 	) external payable isListed(nftAddress, tokenId) nonReentrant {
 		Listing memory listedItem = s_listing[nftAddress][tokenId];
-		if (listedItem.price < msg.value) {
+		if (listedItem.price > msg.value) {
 			revert NftMarketplace__PriceNotMet();
 		}
 		delete (s_listing[nftAddress][tokenId]);
